@@ -366,4 +366,13 @@
 "All Steps" = "All Steps";
 
 /* XMSG: AI Notice message */
-"Suggested by AI. Verify before use. " = "Suggested by AI. Verify before use. "
+"Suggested by AI. Verify before use. " = "Suggested by AI. Verify before use. ";
+
+/* XBUT: Sign In Action in the Authentication */
+"Sign In" = "Sign In";
+
+/* XMSG: Placeholder text for inputView in the Authentication */
+"username" = "username";
+
+/* XMSG: Placeholder text for inputView in the Authentication */
+"password" = "password";

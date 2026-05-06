@@ -216,12 +216,23 @@ extension SortFilterCFGItemContainer: View {
     func listPickerDestination(row r: Int, column c: Int) -> some View {
         let filter: ((SortFilterItem.PickerItem.ValueOptionModel, String) -> Bool) = { f, s in
             if !s.isEmpty {
+                if let customFilter = self._items[r][c].picker.configuration?.searchFilter {
+                    return customFilter(f.value, s)
+                }
                 return f.value.localizedCaseInsensitiveContains(s)
             } else {
                 return true
             }
         }
-        
+
+        let rowContentBuilder: (SortFilterItem.PickerItem.ValueOptionModel) -> AnyView = { e in
+            if let provider = self._items[r][c].picker.configuration?.rowContentProvider {
+                return AnyView(provider(e.index))
+            } else {
+                return AnyView(Text(e.value))
+            }
+        }
+
         return ListPickerDestination(self._items[r][c].picker.uuidValueOptions,
                                      id: \.id,
                                      selections: Binding<Set<UUID>>(get: { self._items[r][c].picker.workingValueSet }, set: { self._items[r][c].picker.workingValueSet = $0 }),
@@ -229,7 +240,16 @@ extension SortFilterCFGItemContainer: View {
                                      isTrackingLiveChanges: true,
                                      searchFilter: self._items[r][c].picker.isSearchBarHidden == false ? filter : nil)
         { e in
-            Text(e.value)
+            let baseView = rowContentBuilder(e)
+            if e.index == self._items[r][c].picker.uuidValueOptions.count - 1,
+               self._items[r][c].picker.configuration?.hasMoreData == true
+            {
+                AnyView(baseView.onAppear {
+                    self._items[r][c].picker.configuration?.onLoadMore?()
+                })
+            } else {
+                baseView
+            }
         }
         .disableEntriesSection(self._items[r][c].picker.disableListEntriesSection)
         .disableContentSection(self._items[r][c].picker.disableListContentSection)
@@ -452,12 +472,24 @@ extension SortFilterCFGItemContainer: View {
                             self._items[r][c].picker.onTap(option: self._items[r][c].picker.valueOptions[idx])
                             self._items[r][c].picker.apply()
                         } label: {
-                            Label { Text(self._items[r][c].picker.valueOptions[idx]) } icon: { Image(fioriName: "fiori.accept") }
+                            Label {
+                                if let provider = self._items[r][c].picker.configuration?.rowContentProvider {
+                                    provider(idx)
+                                } else {
+                                    Text(self._items[r][c].picker.valueOptions[idx])
+                                }
+                            } icon: { Image(fioriName: "fiori.accept") }
                         }
                     } else {
-                        Button(self._items[r][c].picker.valueOptions[idx]) {
+                        Button {
                             self._items[r][c].picker.onTap(option: self._items[r][c].picker.valueOptions[idx])
                             self._items[r][c].picker.apply()
+                        } label: {
+                            if let provider = self._items[r][c].picker.configuration?.rowContentProvider {
+                                provider(idx)
+                            } else {
+                                Text(self._items[r][c].picker.valueOptions[idx])
+                            }
                         }
                     }
                 }
